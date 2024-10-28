@@ -81,8 +81,18 @@ public class Main {
         System.out.print("Matrícula: ");
         String matricula = scanner.nextLine();
         
-        System.out.print("Email de contacto: ");
-        String contacto = scanner.nextLine();
+        String contacto;
+        boolean emailValido = false;
+        do {
+            System.out.print("Email de contacto: ");
+            contacto = scanner.nextLine();
+            
+            if (contacto.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                emailValido = true;
+            } else {
+                System.out.println("Error: El formato del email no es válido. Por favor, intente nuevamente.");
+            }
+        } while (!emailValido);
 
         Estudiante nuevoEstudiante = new Estudiante(nuevoId, nombre, apellido, matricula, contacto);
         estudiantes.add(nuevoEstudiante);
