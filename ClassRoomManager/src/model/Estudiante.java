@@ -1,4 +1,8 @@
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 // Definición de la clase Estudiante, que implementa Serializable para poder guardar objetos de esta clase en archivos.
 public class Estudiante implements Serializable {
@@ -77,5 +81,50 @@ public class Estudiante implements Serializable {
                 ", matricula='" + matricula + '\'' +
                 ", contacto='" + contacto + '\'' +
                 '}';
+    }
+
+    // Método para establecer la conexión a la base de datos
+    private Connection conectar() throws Exception {
+        String url = "jdbc:mysql://localhost:3306/tu_base_de_datos"; // Cambia esto a tu URL de base de datos
+        String usuario = "tu_usuario"; // Cambia esto a tu usuario
+        String contrasena = "tu_contrasena"; // Cambia esto a tu contraseña
+        return DriverManager.getConnection(url, usuario, contrasena);
+    }
+
+    // Método para guardar un estudiante en la base de datos
+    public void guardar() {
+        String sql = "INSERT INTO estudiantes (idEstudiante, nombre, apellido, matricula, contacto) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, this.idEstudiante);
+            pstmt.setString(2, this.nombre);
+            pstmt.setString(3, this.apellido);
+            pstmt.setString(4, this.matricula);
+            pstmt.setString(5, this.contacto);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Método para recuperar un estudiante por ID
+    public static Estudiante obtenerPorId(int id) {
+        String sql = "SELECT * FROM estudiantes WHERE idEstudiante = ?";
+        Estudiante estudiante = null;
+        try (Connection conn = new Estudiante().conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                estudiante = new Estudiante(
+                    rs.getInt("idEstudiante"),
+                    rs.getString("nombre"),
+                    rs.getString("apellido"),
+                    rs.getString("matricula"),
+                    rs.getString("contacto")
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return estudiante;
     }
 }

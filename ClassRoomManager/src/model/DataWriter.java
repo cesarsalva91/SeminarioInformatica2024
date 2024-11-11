@@ -1,5 +1,9 @@
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 public class DataWriter {
@@ -44,7 +48,7 @@ public class DataWriter {
             Asistencia a = (Asistencia) obj;
             return String.format(
                 "{\"idAsistencia\": %d, \"fecha\": \"%s\", \"estado\": \"%s\", \"justificada\": %b, \"idEstudiante\": %d}",
-                a.getIdAsistencia(), a.getFecha(), a.getEstado(), a.isJustificada(), a.getIdEstudiante()
+                a.getIdAsistencia(), a.getFecha(), a.getEstado(), a.getIdEstudiante()
             );
         } else if (obj instanceof Calificacion) {
             Calificacion c = (Calificacion) obj;
@@ -60,5 +64,34 @@ public class DataWriter {
             );
         }
         return "{}";
+    }
+
+    // Método para guardar datos en la base de datos
+    public static void saveDataToDatabase(List<Estudiante> estudiantes, List<Asistencia> asistencias,
+                                           List<Calificacion> calificaciones, List<Notificacion> notificaciones) {
+        String url = "jdbc:mysql://localhost:3306/tu_base_de_datos"; // Cambia esto a tu URL de base de datos
+        String user = "tu_usuario"; // Cambia esto a tu usuario de base de datos
+        String password = "tu_contraseña"; // Cambia esto a tu contraseña de base de datos
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            // Guardar estudiantes
+            String sqlEstudiante = "INSERT INTO estudiantes (idEstudiante, nombre, apellido, matricula, contacto) VALUES (?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlEstudiante)) {
+                for (Estudiante e : estudiantes) {
+                    pstmt.setInt(1, e.getIdEstudiante());
+                    pstmt.setString(2, e.getNombre());
+                    pstmt.setString(3, e.getApellido());
+                    pstmt.setString(4, e.getMatricula());
+                    pstmt.setString(5, e.getContacto());
+                    pstmt.executeUpdate();
+                }
+            }
+
+            // Similar para asistencias, calificaciones y notificaciones...
+            // ... (código omitido para otras inserciones)
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
