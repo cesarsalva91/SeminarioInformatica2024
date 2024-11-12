@@ -95,9 +95,8 @@ public class SchoolService {
         try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (Asistencia asistencia : asistencias) {
                 pstmt.setInt(1, asistencia.getIdAsistencia());
-                pstmt.setString(2, asistencia.getFecha());
+                pstmt.setString(2, asistencia.getFecha().toString());
                 pstmt.setString(3, asistencia.getEstado());
-                pstmt.setBoolean(4, asistencia.isJustificada());
                 pstmt.setInt(5, asistencia.getIdEstudiante());
                 pstmt.addBatch();
             }
@@ -155,6 +154,7 @@ public class SchoolService {
                 Notificacion notificacion = new Notificacion(
                     rs.getInt("idNotificacion"),
                     rs.getString("mensaje"),
+                    rs.getString("fechaEnvio"),
                     rs.getInt("idEstudiante")
                 );
                 notificaciones.add(notificacion);
@@ -167,12 +167,13 @@ public class SchoolService {
 
     // Guardar notificaciones en la base de datos
     public void guardarNotificaciones(List<Notificacion> notificaciones) {
-        String sql = "INSERT INTO notificaciones (idNotificacion, mensaje, idEstudiante) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO notificaciones (idNotificacion, mensaje, fechaEnvio, idEstudiante) VALUES (?, ?, ?, ?)";
         try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (Notificacion notificacion : notificaciones) {
                 pstmt.setInt(1, notificacion.getIdNotificacion());
                 pstmt.setString(2, notificacion.getMensaje());
-                pstmt.setInt(3, notificacion.getIdEstudiante());
+                pstmt.setString(3, notificacion.getFechaEnvio());
+                pstmt.setInt(4, notificacion.getIdEstudiante());
                 pstmt.addBatch();
             }
             pstmt.executeBatch();

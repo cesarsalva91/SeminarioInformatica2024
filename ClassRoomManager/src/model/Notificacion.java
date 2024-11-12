@@ -1,6 +1,7 @@
 import java.io.Serializable;
-//import java.util.Date;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Notificacion implements Serializable {
 
@@ -63,5 +64,34 @@ public class Notificacion implements Serializable {
                 ", fechaEnvio=" + fechaEnvio +
                 ", idEstudiante=" + idEstudiante +
                 '}';
+    }
+
+    // Método para guardar la notificación en la base de datos
+    public void guardar() {
+        Connection conexion = null;
+        PreparedStatement ps = null;
+
+        try {
+            conexion = ConexionDB.obtenerConexion();
+            String sql = "INSERT INTO notificaciones (mensaje, fecha_envio, id_estudiante) VALUES (?, ?, ?)";
+            ps = conexion.prepareStatement(sql);
+            ps.setString(1, this.mensaje);
+            ps.setString(2, this.fechaEnvio);
+            ps.setInt(3, this.idEstudiante);
+            ps.executeUpdate();
+            System.out.println("Notificación guardada exitosamente");
+        } catch (SQLException e) {
+            System.out.println("Error al guardar la notificación: " + e.getMessage());
+        } finally {
+            // Cerrar recursos
+            ConexionDB.cerrarConexion(conexion);
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    System.out.println("Error al cerrar PreparedStatement: " + e.getMessage());
+                }
+            }
+        }
     }
 }

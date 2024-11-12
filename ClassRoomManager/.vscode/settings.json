@@ -3,6 +3,7 @@
         "src\\model"
     ],
     "java.project.referencedLibraries": [
-        "src\\lib\\mysql-connector-j-9.1.0.jar"
+        "src\\lib\\mysql-connector-j-9.1.0.jar",
+        "c:\\Users\\csalva\\Desktop\\seminario de practica\\SeminarioInformatica2024\\ClassRoomManager\\src\\lib\\mysql-connector-j-9.1.0.jar"
     ]
 }
