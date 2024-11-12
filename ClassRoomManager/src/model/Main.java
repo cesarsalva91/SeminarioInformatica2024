@@ -1,299 +1,241 @@
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Main {
-    private static final String DATA_DIR = "data";
-    private static final String FILE_PATH = DATA_DIR + "/estudiantes.json";
-
-    private static void initializeFileStructure() {
-        // Crear directorio data si no existe
-        File directory = new File(DATA_DIR);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
-        // Crear archivo estudiantes.json si no existe
-        File file = new File(FILE_PATH);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                // Escribir estructura JSON inicial
-                FileWriter writer = new FileWriter(file);
-                writer.write("{\"estudiantes\":[]}");
-                writer.close();
-                System.out.println("Archivo JSON inicializado correctamente.");
-            } catch (IOException e) {
-                System.err.println("Error al crear el archivo JSON inicial: " + e.getMessage());
-            }
-        }
-    }
-
-    private static SchoolService schoolService = new SchoolService();
-    private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        // Inicializar la estructura de archivos
-        initializeFileStructure();
+        Scanner scanner = new Scanner(System.in);
+        int opcion;
 
-        while (true) {
-            System.out.println("\n=== SISTEMA DE GESTIÓN ESCOLAR ===");
-            System.out.println("1. Agregar estudiante");
-            System.out.println("2. Registrar asistencia");
-            System.out.println("3. Asociar materia a estudiante");
-            System.out.println("4. Consultar asistencias");
-            System.out.println("5. Salir");
-            System.out.print("Seleccione una opción: ");
-            
-            int opcion = scanner.nextInt();
-            scanner.nextLine(); // Limpiar buffer
-            
+        do {
+            System.out.println("Seleccione una opción:");
+            System.out.println("1. Mostrar estudiantes");
+            System.out.println("2. Agregar estudiante");
+            System.out.println("3. Tomar asistencia");
+            System.out.println("4. Mostrar número de inasistencias");
+            System.out.println("5. Mostrar calificaciones");
+            System.out.println("0. Salir");
+            opcion = scanner.nextInt();
+            scanner.nextLine(); // Consumir el salto de línea
+
             switch (opcion) {
-                case 1 -> agregarEstudiante();
-                case 2 -> registrarAsistencia();
-                case 3 -> asociarMateria();
-                case 4 -> consultarAsistencias();
-                case 5 -> {
-                    System.out.println("¡Hasta luego!");
-                    return;
+                case 1:
+                    mostrarEstudiantes(); // Llamar al método para mostrar estudiantes
+                    break;
+                case 2:
+                    agregarEstudiante(scanner); // Llamar al método para agregar estudiante
+                    break;
+                case 3:
+                    tomarAsistencia(scanner); // Llamar al método para tomar asistencia
+                    break;
+                case 4:
+                    mostrarNumeroInasistencias(scanner); // Llamar al método para mostrar número de inasistencias
+                    break;
+                case 5:
+                    mostrarCalificaciones(scanner); // Llamar al método para mostrar calificaciones
+                    break;
+                case 0:
+                    System.out.println("Saliendo...");
+                    break;
+                default:
+                    System.out.println("Opción no válida. Intente de nuevo.");
+            }
+
+            // Preguntar si desea volver al menú principal
+            if (opcion != 0) {
+                System.out.print("¿Desea volver al menú principal? (s/n): ");
+                String respuesta = scanner.nextLine();
+                if (respuesta.equalsIgnoreCase("n")) {
+                    opcion = 0; // Salir del bucle
                 }
-                default -> System.out.println("Opción no válida");
+            }
+        } while (opcion != 0);
+
+        scanner.close();
+    }
+
+    public static void mostrarEstudiantes() {
+        List<Estudiante> estudiantes = new ArrayList<>(); // Lista para almacenar estudiantes
+        Connection connection = null;
+        try {
+            connection = ConexionDB.obtenerConexion(); // Establecer conexión a la base de datos
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM estudiantes"); // Consulta para obtener estudiantes
+
+            // Encabezados de la tabla
+            System.out.printf("%-10s %-20s %-20s %-15s %-15s%n", "ID", "Nombre", "Apellido", "Matrícula", "Contacto");
+            System.out.println("---------------------------------------------------------------");
+
+            while (resultSet.next()) {
+                // Crear un objeto Estudiante a partir de los datos de la base de datos
+                Estudiante estudiante = new Estudiante(
+                    resultSet.getInt("id_estudiante"),
+                    resultSet.getString("nombre"),
+                    resultSet.getString("apellido"),
+                    resultSet.getString("matricula"),
+                    resultSet.getString("contacto")
+                );
+                estudiantes.add(estudiante); // Agregar el estudiante a la lista
+
+                // Mostrar cada estudiante en formato tabular
+                System.out.printf("%-10d %-20s %-20s %-15s %-15s%n", 
+                    estudiante.getIdEstudiante(), 
+                    estudiante.getNombre(), 
+                    estudiante.getApellido(), 
+                    estudiante.getMatricula(), 
+                    estudiante.getContacto());
+            }
+        } catch (Exception e) {
+            e.printStackTrace(); // Manejo de excepciones
+        } finally {
+            if (connection != null) {
+                ConexionDB.cerrarConexion(connection); // Cerrar conexión
             }
         }
     }
 
-    private static void agregarEstudiante() {
-        System.out.println("\n=== AGREGAR ESTUDIANTE ===");
-        
-        List<Estudiante> estudiantes = schoolService.cargarEstudiantes();
-        int nuevoId = estudiantes.isEmpty() ? 1 : estudiantes.get(estudiantes.size() - 1).getIdEstudiante() + 1;
+    public static void agregarEstudiante(Scanner scanner) {
+        System.out.println("Ingrese los datos del estudiante:");
 
+        // Eliminar la entrada para el ID Estudiante y la matrícula
         System.out.print("Nombre: ");
         String nombre = scanner.nextLine();
-        
+
         System.out.print("Apellido: ");
         String apellido = scanner.nextLine();
-        
+
+        // Puedes dejar la matrícula como un campo opcional o eliminarlo
         System.out.print("Matrícula: ");
         String matricula = scanner.nextLine();
-        
-        String contacto;
-        boolean emailValido = false;
-        do {
-            System.out.print("Email de contacto: ");
-            contacto = scanner.nextLine();
-            
-            if (contacto.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-                emailValido = true;
-            } else {
-                System.out.println("Error: El formato del email no es válido. Por favor, intente nuevamente.");
-            }
-        } while (!emailValido);
 
-        Estudiante nuevoEstudiante = new Estudiante(nuevoId, nombre, apellido, matricula, contacto);
-        estudiantes.add(nuevoEstudiante);
-        schoolService.guardarEstudiantes(estudiantes);
+        System.out.print("Contacto: ");
+        String contacto = scanner.nextLine();
+
+        // Crear un nuevo objeto Estudiante y guardarlo en la base de datos
+        Estudiante nuevoEstudiante = new Estudiante(0, nombre, apellido, matricula, contacto); // ID se puede manejar automáticamente
+        nuevoEstudiante.guardar(); // Guardar el estudiante en la base de datos
 
         System.out.println("Estudiante agregado exitosamente.");
     }
 
-    private static void registrarAsistencia() {
-        System.out.println("\n=== REGISTRAR ASISTENCIA ===");
-        
-        List<Estudiante> estudiantes = schoolService.cargarEstudiantes();
-        if (estudiantes.isEmpty()) {
-            System.out.println("No hay estudiantes registrados.");
-            return;
-        }
+    public static void tomarAsistencia(Scanner scanner) {
+        System.out.print("Ingrese el ID del estudiante: ");
+        int idEstudiante = scanner.nextInt();
+        scanner.nextLine(); // Consumir el salto de línea
 
-        System.out.print("Ingrese la matrícula del estudiante: ");
-        String matricula = scanner.nextLine();
+        LocalDate fecha = LocalDate.now();
+        System.out.println("Fecha de asistencia: " + fecha);
 
-        // Buscar estudiante por matrícula
-        Estudiante estudiante = estudiantes.stream()
-                .filter(e -> e.getMatricula().equals(matricula))
-                .findFirst()
-                .orElse(null);
+        System.out.print("Ingrese el estado (s para Presente, n para Ausente): ");
+        String estadoInput = scanner.nextLine();
+        String estado = estadoInput.equalsIgnoreCase("s") ? "Presente" : "Ausente";
 
-        if (estudiante == null) {
-            System.out.println("No se encontró ningún estudiante con esa matrícula.");
-            return;
-        }
-
-        // Mostrar datos del estudiante encontrado
-        System.out.println("\nEstudiante encontrado:");
-        System.out.println("Nombre: " + estudiante.getNombre() + " " + estudiante.getApellido());
-        System.out.println("Matrícula: " + estudiante.getMatricula());
-
-        List<Asistencia> asistencias = schoolService.cargarAsistencias();
-        int nuevoId = asistencias.isEmpty() ? 1 : asistencias.get(asistencias.size() - 1).getIdAsistencia() + 1;
-
-        String fecha = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
-        
-        System.out.println("\nEstado de asistencia:");
-        System.out.println("1. Presente");
-        System.out.println("2. Ausente");
-        System.out.print("Seleccione: ");
-        int estadoOpcion = scanner.nextInt();
-        String estado = estadoOpcion == 1 ? "Presente" : "Ausente";
-
-        // Solo preguntar por justificación si está ausente
         boolean justificada = false;
-        if (estado.equals("Ausente")) {
-            System.out.print("¿Está justificada? (s/n): ");
-            justificada = scanner.next().toLowerCase().startsWith("s");
+        if (estado.equalsIgnoreCase("Ausente")) {
+            System.out.print("¿Justificada? (s para sí, n para no): ");
+            String justificadaInput = scanner.nextLine();
+            justificada = justificadaInput.equalsIgnoreCase("s");
         }
 
-        Asistencia nuevaAsistencia = new Asistencia(nuevoId, fecha, estado, justificada, estudiante.getIdEstudiante());
-        asistencias.add(nuevaAsistencia);
-        schoolService.guardarAsistencias(asistencias);
-
-        System.out.println("Asistencia registrada exitosamente.");
+        Asistencia asistencia = new Asistencia(idEstudiante, fecha, estado, justificada);
+        if (asistencia.guardar()) {
+            System.out.println("Asistencia registrada exitosamente.");
+        } else {
+            System.out.println("Error al registrar la asistencia.");
+        }
     }
 
-    private static void agregarMateria() {
-        System.out.println("\n=== AGREGAR MATERIA ===");
-        
-        System.out.print("Nombre de la materia: ");
-        String nombreMateria = scanner.nextLine();
-        
-        System.out.print("Descripción de la materia: ");
-        String descripcion = scanner.nextLine();
-        
-        // Aquí puedes agregar la lógica para guardar la materia en un archivo JSON
-        // Similar a como se hace con estudiantes y asistencias
-        
-        System.out.println("Materia agregada exitosamente.");
+    public static void mostrarNumeroInasistencias(Scanner scanner) {
+        System.out.print("Ingrese el ID del estudiante: ");
+        int idEstudiante = scanner.nextInt();
+        scanner.nextLine(); // Consumir el salto de línea
+
+        int inasistencias = Asistencia.contarInasistenciasPorEstudiante(idEstudiante); // Llamar al método para contar inasistencias
+        int inasistenciasJustificadas = Asistencia.contarInasistenciasJustificadasPorEstudiante(idEstudiante); // Llamar al método para contar inasistencias justificadas
+
+        System.out.println("Número de inasistencias del estudiante con ID " + idEstudiante + ": " + inasistencias);
+        System.out.println("Número de inasistencias justificadas del estudiante con ID " + idEstudiante + ": " + inasistenciasJustificadas);
     }
 
-    private static void asociarMateria() {
-        System.out.println("\n=== ASOCIAR MATERIA ===");
+    public static void mostrarCalificaciones(Scanner scanner) {
+        System.out.print("Ingrese el ID del estudiante: ");
+        int idEstudiante = scanner.nextInt();
+        scanner.nextLine(); // Consumir el salto de línea
+
+        List<Calificacion> calificaciones = Calificacion.obtenerCalificacionesPorEstudiante(idEstudiante); // Obtener calificaciones
+
+        // Encabezados de la tabla
+        System.out.printf("%-10s %-20s %-15s%n", "ID", "Materia", "Calificación");
+        System.out.println("---------------------------------------------------------------");
+
+        if (calificaciones.isEmpty()) {
+            System.out.println("No se encontraron calificaciones para el estudiante con ID " + idEstudiante + ".");
+        } else {
+            for (Calificacion calificacion : calificaciones) {
+                // Obtener el nombre de la materia usando el id_materia
+                String nombreMateria = obtenerNombreMateria(calificacion.getIdMateria()); // Método que debes implementar
+                System.out.printf("%-10d %-20s %-15.2f%n", 
+                    calificacion.getIdCalificacion(), 
+                    nombreMateria, 
+                    calificacion.getNota());
+            }
+        }
         
-        List<Estudiante> estudiantes = schoolService.cargarEstudiantes();
-        if (estudiantes.isEmpty()) {
-            System.out.println("No hay estudiantes registrados.");
-            return;
-        }
-
-        System.out.print("Ingrese la matrícula del estudiante: ");
-        String matricula = scanner.nextLine();
-
-        // Buscar estudiante por matrícula
-        Estudiante estudiante = estudiantes.stream()
-                .filter(e -> e.getMatricula().equals(matricula))
-                .findFirst()
-                .orElse(null);
-
-        if (estudiante == null) {
-            System.out.println("No se encontró ningún estudiante con esa matrícula.");
-            return;
-        }
-
-        // Mostrar datos del estudiante encontrado
-        System.out.println("\nEstudiante encontrado:");
-        System.out.println("Nombre: " + estudiante.getNombre() + " " + estudiante.getApellido());
-        System.out.println("Matrícula: " + estudiante.getMatricula());
-
-        List<Calificacion> calificaciones = schoolService.cargarCalificaciones();
-        
-        System.out.print("Nombre de la materia: ");
-        String materia = scanner.nextLine();
-
-        // Verificar si el estudiante ya tiene esta materia asociada
-        boolean materiaExistente = calificaciones.stream()
-                .anyMatch(c -> c.getIdEstudiante() == estudiante.getIdEstudiante() 
-                        && c.getMateria().equalsIgnoreCase(materia));
-
-        if (materiaExistente) {
-            System.out.println("El estudiante ya tiene esta materia asociada.");
-            return;
-        }
-
-        // Si la materia no existe, proceder a asociarla
-        int nuevoId = calificaciones.isEmpty() ? 1 : calificaciones.get(calificaciones.size() - 1).getIdCalificacion() + 1;
-
-        System.out.print("Nota inicial (0-10): ");
-        double nota = scanner.nextDouble();
-        
-        // Validar que la nota esté en el rango correcto
-        if (nota < 0 || nota > 10) {
-            System.out.println("La nota debe estar entre 0 y 10.");
-            return;
-        }
-
-        Calificacion nuevaCalificacion = new Calificacion(nuevoId, materia, nota, estudiante.getIdEstudiante());
-        calificaciones.add(nuevaCalificacion);
-        schoolService.guardarCalificaciones(calificaciones);
-
-        System.out.println("Materia asociada exitosamente.");
+        // Agregar un pie de página para mayor claridad
+        System.out.println("---------------------------------------------------------------");
+        System.out.println("Fin de las calificaciones.");
     }
 
-    private static void consultarAsistencias() {
-        System.out.println("\n=== CONSULTAR ASISTENCIAS ===");
+    // Método para obtener el nombre de la materia
+    public static String obtenerNombreMateria(int idMateria) {
+        String nombreMateria = "";
+        String sql = "SELECT nombre FROM materia WHERE id_materia = ?"; // Asegúrate de que la tabla de materias se llame 'materia'
         
-        List<Estudiante> estudiantes = schoolService.cargarEstudiantes();
-        if (estudiantes.isEmpty()) {
-            System.out.println("No hay estudiantes registrados.");
-            return;
+        try (Connection conn = ConexionDB.obtenerConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, idMateria);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                nombreMateria = rs.getString("nombre"); // Cambia 'nombre' al nombre real de la columna
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el nombre de la materia: " + e.getMessage());
         }
+        return nombreMateria;
+    }
+}
 
-        System.out.print("Ingrese la matrícula del estudiante: ");
-        String matricula = scanner.nextLine();
-
-        // Buscar estudiante por matrícula
-        Estudiante estudiante = estudiantes.stream()
-                .filter(e -> e.getMatricula().equals(matricula))
-                .findFirst()
-                .orElse(null);
-
-        if (estudiante == null) {
-            System.out.println("No se encontró ningún estudiante con esa matrícula.");
-            return;
+class ConexionDB {
+    public static Connection obtenerConexion() {
+        try {
+            // Cambia la URL, usuario y contraseña según tu configuración de base de datos
+            String url = "jdbc:mysql://localhost:3306/tu_base_de_datos";
+            String user = "tu_usuario";
+            String password = "tu_contraseña";
+            return DriverManager.getConnection(url, user, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
+    }
 
-        // Mostrar datos del estudiante encontrado
-        System.out.println("\nEstudiante encontrado:");
-        System.out.println("Nombre: " + estudiante.getNombre() + " " + estudiante.getApellido());
-        System.out.println("Matrícula: " + estudiante.getMatricula());
-
-        // Buscar todas las asistencias del estudiante
-        List<Asistencia> asistencias = schoolService.cargarAsistencias();
-        List<Asistencia> asistenciasEstudiante = asistencias.stream()
-                .filter(a -> a.getIdEstudiante() == estudiante.getIdEstudiante())
-                .toList();
-
-        if (asistenciasEstudiante.isEmpty()) {
-            System.out.println("\nEl estudiante no tiene asistencias registradas.");
-            return;
+    public static void cerrarConexion(Connection connection) {
+        try {
+            if (connection != null) {
+                connection.close(); // Cerrar conexión
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        // Mostrar todas las asistencias
-        System.out.println("\nHistorial de asistencias:");
-        System.out.println("Fecha\t\tEstado\t\tJustificada");
-        System.out.println("----------------------------------------");
-        for (Asistencia asistencia : asistenciasEstudiante) {
-            System.out.printf("%s\t%s\t\t%s%n", 
-                asistencia.getFecha(), 
-                asistencia.getEstado(),
-                asistencia.isJustificada() ? "Sí" : "No"
-            );
-        }
-
-        // Calcular estadísticas
-        long presentes = asistenciasEstudiante.stream()
-                .filter(a -> a.getEstado().equals("Presente"))
-                .count();
-        long ausentes = asistenciasEstudiante.size() - presentes;
-        double porcentajeAsistencia = (double) presentes / asistenciasEstudiante.size() * 100;
-
-        System.out.println("\nResumen:");
-        System.out.printf("Total de clases: %d%n", asistenciasEstudiante.size());
-        System.out.printf("Presentes: %d%n", presentes);
-        System.out.printf("Ausentes: %d%n", ausentes);
-        System.out.printf("Porcentaje de asistencia: %.2f%%%n", porcentajeAsistencia);
     }
 }

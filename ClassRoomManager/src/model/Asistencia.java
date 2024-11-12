@@ -8,31 +8,35 @@ public class Asistencia {
     private int idEstudiante;
     private LocalDate fecha;
     private String estado;
+    private boolean justificada;
 
     // Constructor
-    public Asistencia(int idEstudiante, LocalDate fecha, String estado) {
+    public Asistencia(int idEstudiante, LocalDate fecha, String estado, boolean justificada) {
         this.idEstudiante = idEstudiante;
         this.fecha = fecha;
         this.estado = estado;
+        this.justificada = justificada;
     }
 
     // Constructor con ID para cuando se recupera de la BD
-    public Asistencia(int idAsistencia, int idEstudiante, LocalDate fecha, String estado) {
+    public Asistencia(int idAsistencia, int idEstudiante, LocalDate fecha, String estado, boolean justificada) {
         this.idAsistencia = idAsistencia;
         this.idEstudiante = idEstudiante;
         this.fecha = fecha;
         this.estado = estado;
+        this.justificada = justificada;
     }
 
     // Métodos CRUD
     public boolean guardar() {
-        String sql = "INSERT INTO asistencia (id_estudiante, fecha, estado) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO asistencia (id_estudiante, fecha, estado, justificada) VALUES (?, ?, ?, ?)";
         try (Connection conn = ConexionDB.obtenerConexion();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
             stmt.setInt(1, idEstudiante);
             stmt.setDate(2, Date.valueOf(fecha));
             stmt.setString(3, estado);
+            stmt.setBoolean(4, justificada);
             
             int filasAfectadas = stmt.executeUpdate();
             if (filasAfectadas > 0) {
@@ -62,7 +66,8 @@ public class Asistencia {
                     rs.getInt("id_asistencia"),
                     rs.getInt("id_estudiante"),
                     rs.getDate("fecha").toLocalDate(),
-                    rs.getString("estado")
+                    rs.getString("estado"),
+                    rs.getBoolean("justificada")
                 );
             }
         } catch (SQLException e) {
@@ -72,14 +77,15 @@ public class Asistencia {
     }
 
     public boolean actualizar() {
-        String sql = "UPDATE asistencia SET id_estudiante = ?, fecha = ?, estado = ? WHERE id_asistencia = ?";
+        String sql = "UPDATE asistencia SET id_estudiante = ?, fecha = ?, estado = ?, justificada = ? WHERE id_asistencia = ?";
         try (Connection conn = ConexionDB.obtenerConexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, idEstudiante);
             stmt.setDate(2, Date.valueOf(fecha));
             stmt.setString(3, estado);
-            stmt.setInt(4, idAsistencia);
+            stmt.setBoolean(4, justificada);
+            stmt.setInt(5, idAsistencia);
             
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -117,7 +123,8 @@ public class Asistencia {
                     rs.getInt("id_asistencia"),
                     rs.getInt("id_estudiante"),
                     rs.getDate("fecha").toLocalDate(),
-                    rs.getString("estado")
+                    rs.getString("estado"),
+                    rs.getBoolean("justificada")
                 ));
             }
         } catch (SQLException e) {
@@ -126,13 +133,55 @@ public class Asistencia {
         return asistencias;
     }
 
+    // Método para contar las inasistencias de un estudiante
+    public static int contarInasistenciasPorEstudiante(int idEstudiante) {
+        int contadorInasistencias = 0;
+        String sql = "SELECT * FROM asistencia WHERE id_estudiante = ? AND estado = 'Ausente'";
+        
+        try (Connection conn = ConexionDB.obtenerConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, idEstudiante);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                contadorInasistencias++;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al contar inasistencias: " + e.getMessage());
+        }
+        return contadorInasistencias;
+    }
+
+    // Método para contar las inasistencias justificadas de un estudiante
+    public static int contarInasistenciasJustificadasPorEstudiante(int idEstudiante) {
+        int contadorInasistenciasJustificadas = 0;
+        String sql = "SELECT * FROM asistencia WHERE id_estudiante = ? AND estado = 'Ausente' AND justificada = true";
+        
+        try (Connection conn = ConexionDB.obtenerConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, idEstudiante);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                contadorInasistenciasJustificadas++;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al contar inasistencias justificadas: " + e.getMessage());
+        }
+        return contadorInasistenciasJustificadas;
+    }
+
     // Getters y Setters
     public int getIdAsistencia() { return idAsistencia; }
     public int getIdEstudiante() { return idEstudiante; }
     public LocalDate getFecha() { return fecha; }
     public String getEstado() { return estado; }
+    public boolean isJustificada() { return justificada; }
 
     public void setIdEstudiante(int idEstudiante) { this.idEstudiante = idEstudiante; }
     public void setFecha(LocalDate fecha) { this.fecha = fecha; }
     public void setEstado(String estado) { this.estado = estado; }
+    public void setJustificada(boolean justificada) { this.justificada = justificada; }
 }

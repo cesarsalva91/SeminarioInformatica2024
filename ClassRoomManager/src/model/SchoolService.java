@@ -3,36 +3,16 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class SchoolService {
-    private Connection connection;
-
-    public SchoolService() {
-        // Establecer la conexión a la base de datos
-        try {
-            this.connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/tu_base_de_datos", "usuario", "contraseña");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Método para establecer la conexión a la base de datos
-    private Connection conectar() throws Exception {
-        String url = "jdbc:mysql://localhost:3306/tu_base_de_datos"; // Cambia esto a tu URL de base de datos
-        String usuario = "tu_usuario"; // Cambia esto a tu usuario
-        String contrasena = "tu_contrasena"; // Cambia esto a tu contraseña
-        return DriverManager.getConnection(url, usuario, contrasena);
-    }
 
     // Cargar estudiantes desde la base de datos
     public List<Estudiante> cargarEstudiantes() {
         List<Estudiante> estudiantes = new ArrayList<>();
         String sql = "SELECT * FROM estudiantes";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 Estudiante estudiante = new Estudiante(
@@ -53,7 +33,7 @@ public class SchoolService {
     // Guardar estudiantes en la base de datos
     public void guardarEstudiantes(List<Estudiante> estudiantes) {
         String sql = "INSERT INTO estudiantes (idEstudiante, nombre, apellido, matricula, contacto) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (Estudiante estudiante : estudiantes) {
                 pstmt.setInt(1, estudiante.getIdEstudiante());
                 pstmt.setString(2, estudiante.getNombre());
@@ -72,14 +52,15 @@ public class SchoolService {
     public List<Asistencia> cargarAsistencias() {
         List<Asistencia> asistencias = new ArrayList<>();
         String sql = "SELECT * FROM asistencias";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 Asistencia asistencia = new Asistencia(
                     rs.getInt("idAsistencia"),
                     rs.getInt("idEstudiante"),
                     rs.getDate("fecha").toLocalDate(),
-                    rs.getString("estado")
+                    rs.getString("estado"),
+                    rs.getBoolean("justificada")
                 );
                 asistencias.add(asistencia);
             }
@@ -91,13 +72,13 @@ public class SchoolService {
 
     // Guardar asistencias en la base de datos
     public void guardarAsistencias(List<Asistencia> asistencias) {
-        String sql = "INSERT INTO asistencias (idAsistencia, fecha, estado, justificada, idEstudiante) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = "INSERT INTO asistencias (idAsistencia, fecha, estado, idEstudiante) VALUES (?, ?, ?, ?)";
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (Asistencia asistencia : asistencias) {
                 pstmt.setInt(1, asistencia.getIdAsistencia());
-                pstmt.setString(2, asistencia.getFecha().toString());
+                pstmt.setDate(2, java.sql.Date.valueOf(asistencia.getFecha()));
                 pstmt.setString(3, asistencia.getEstado());
-                pstmt.setInt(5, asistencia.getIdEstudiante());
+                pstmt.setInt(4, asistencia.getIdEstudiante());
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
@@ -109,15 +90,15 @@ public class SchoolService {
     // Cargar calificaciones desde la base de datos
     public List<Calificacion> cargarCalificaciones() {
         List<Calificacion> calificaciones = new ArrayList<>();
-        String sql = "SELECT * FROM calificaciones";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = "SELECT * FROM calificacion";
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 Calificacion calificacion = new Calificacion(
-                    rs.getInt("idCalificacion"),
-                    rs.getInt("idEstudiante"),
-                    rs.getString("materia"),
-                    rs.getDouble("nota")
+                    rs.getInt("id_calificacion"),
+                    rs.getInt("id_estudiante"),
+                    rs.getInt("id_materia"),
+                    rs.getFloat("nota")
                 );
                 calificaciones.add(calificacion);
             }
@@ -129,13 +110,12 @@ public class SchoolService {
 
     // Guardar calificaciones en la base de datos
     public void guardarCalificaciones(List<Calificacion> calificaciones) {
-        String sql = "INSERT INTO calificaciones (idCalificacion, idEstudiante, nota, materia) VALUES (?, ?, ?, ?)";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = "INSERT INTO calificacion (id_estudiante, id_materia, nota) VALUES (?, ?, ?)";
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (Calificacion calificacion : calificaciones) {
-                pstmt.setInt(1, calificacion.getIdCalificacion());
-                pstmt.setInt(2, calificacion.getIdEstudiante());
-                pstmt.setDouble(3, calificacion.getNota());
-                pstmt.setString(4, calificacion.getMateria());
+                pstmt.setInt(1, calificacion.getIdEstudiante());
+                pstmt.setInt(2, calificacion.getIdMateria());
+                pstmt.setFloat(3, calificacion.getNota());
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
@@ -148,7 +128,7 @@ public class SchoolService {
     public List<Notificacion> cargarNotificaciones() {
         List<Notificacion> notificaciones = new ArrayList<>();
         String sql = "SELECT * FROM notificaciones";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 Notificacion notificacion = new Notificacion(
@@ -168,7 +148,7 @@ public class SchoolService {
     // Guardar notificaciones en la base de datos
     public void guardarNotificaciones(List<Notificacion> notificaciones) {
         String sql = "INSERT INTO notificaciones (idNotificacion, mensaje, fechaEnvio, idEstudiante) VALUES (?, ?, ?, ?)";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (Notificacion notificacion : notificaciones) {
                 pstmt.setInt(1, notificacion.getIdNotificacion());
                 pstmt.setString(2, notificacion.getMensaje());
@@ -182,14 +162,17 @@ public class SchoolService {
         }
     }
 
-    // Método para cerrar la conexión
-    public void cerrarConexion() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
+    // Método para mostrar calificaciones de un estudiante
+    public void mostrarCalificaciones(int idEstudiante) {
+        List<Calificacion> calificaciones = Calificacion.obtenerCalificacionesPorEstudiante(idEstudiante);
+        
+        System.out.println("Calificaciones del estudiante con ID " + idEstudiante + ":");
+        if (calificaciones.isEmpty()) {
+            System.out.println("No se encontraron calificaciones para este estudiante.");
+        } else {
+            for (Calificacion calificacion : calificaciones) {
+                System.out.println("Materia: " + calificacion.getIdMateria() + ", Calificación: " + calificacion.getNota());
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 }

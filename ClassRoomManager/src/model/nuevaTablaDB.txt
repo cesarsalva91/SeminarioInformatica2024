@@ -1,0 +1,13 @@
+USE classroommanagerdb;
+CREATE TABLE Materia (
+    id_materia INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    codigo VARCHAR(20)
+);
+
+ALTER TABLE Calificacion
+DROP COLUMN materia,
+ADD COLUMN id_materia INT,
+ADD FOREIGN KEY (id_materia) REFERENCES Materia(id_materia) ON DELETE CASCADE;
+

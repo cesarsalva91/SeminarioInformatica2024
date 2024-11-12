@@ -1,6 +1,5 @@
 import java.io.Serializable;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -8,7 +7,6 @@ import java.sql.ResultSet;
 public class Estudiante implements Serializable {
 
     // Atributos privados de la clase Estudiante.
-    // Estos atributos representan los datos que se almacenan para cada estudiante.
     private int idEstudiante;  
     private String nombre;      
     private String apellido;    
@@ -28,7 +26,6 @@ public class Estudiante implements Serializable {
     }
 
     // Métodos Getters y Setters para cada atributo.
-    // Estos métodos permiten acceder y modificar los valores de los atributos desde fuera de la clase, manteniendo la encapsulación.
     public int getIdEstudiante() {
         return idEstudiante;
     }
@@ -70,8 +67,6 @@ public class Estudiante implements Serializable {
     }
 
     // Método toString que sobrescribe el método por defecto de Object.
-    // Este método permite representar el objeto Estudiante como un String, mostrando todos sus atributos.
-    // Es útil para imprimir el objeto y verificar su contenido en un formato legible.
     @Override
     public String toString() {
         return "Estudiante{" +
@@ -83,24 +78,17 @@ public class Estudiante implements Serializable {
                 '}';
     }
 
-    // Método para establecer la conexión a la base de datos
-    private Connection conectar() throws Exception {
-        String url = "jdbc:mysql://localhost:3306/tu_base_de_datos"; // Cambia esto a tu URL de base de datos
-        String usuario = "tu_usuario"; // Cambia esto a tu usuario
-        String contrasena = "tu_contrasena"; // Cambia esto a tu contraseña
-        return DriverManager.getConnection(url, usuario, contrasena);
-    }
-
     // Método para guardar un estudiante en la base de datos
     public void guardar() {
-        String sql = "INSERT INTO estudiantes (idEstudiante, nombre, apellido, matricula, contacto) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = "INSERT INTO estudiantes (id_estudiante, nombre, apellido, matricula, contacto) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, this.idEstudiante);
             pstmt.setString(2, this.nombre);
             pstmt.setString(3, this.apellido);
             pstmt.setString(4, this.matricula);
             pstmt.setString(5, this.contacto);
             pstmt.executeUpdate();
+            System.out.println("Estudiante guardado exitosamente.");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -108,14 +96,14 @@ public class Estudiante implements Serializable {
 
     // Método para recuperar un estudiante por ID
     public static Estudiante obtenerPorId(int id) {
-        String sql = "SELECT * FROM estudiantes WHERE idEstudiante = ?";
+        String sql = "SELECT * FROM estudiantes WHERE id_estudiante = ?";
         Estudiante estudiante = null;
-        try (Connection conn = new Estudiante().conectar(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.obtenerConexion(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 estudiante = new Estudiante(
-                    rs.getInt("idEstudiante"),
+                    rs.getInt("id_estudiante"),
                     rs.getString("nombre"),
                     rs.getString("apellido"),
                     rs.getString("matricula"),

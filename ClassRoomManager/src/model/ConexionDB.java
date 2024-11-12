@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 public class ConexionDB {
     // Datos de conexión
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/classroommanagerdb";
+    private static final String URL = "jdbc:mysql://localhost:3306/classroommanagerdb";
     private static final String USUARIO = "root";
     private static final String CONTRASENA = "WUppa2-.";
     
@@ -18,7 +18,7 @@ public class ConexionDB {
             
             // Establecer la conexión
             conexion = DriverManager.getConnection(URL, USUARIO, CONTRASENA);
-            System.out.println("Conexión exitosa a la base de datos");
+            //System.out.println("Conexión exitosa a la base de datos");
             
         } catch (ClassNotFoundException e) {
             System.out.println("Error al cargar el driver: " + e.getMessage());

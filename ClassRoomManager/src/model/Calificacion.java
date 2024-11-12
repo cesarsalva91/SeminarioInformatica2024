@@ -5,33 +5,33 @@ import java.util.List;
 public class Calificacion {
     private int idCalificacion;
     private int idEstudiante;
-    private String materia;
-    private double nota;
+    private int idMateria;
+    private float nota;
 
     // Constructor
-    public Calificacion(int idEstudiante, String materia, double nota) {
+    public Calificacion(int idEstudiante, int idMateria, float nota) {
         this.idEstudiante = idEstudiante;
-        this.materia = materia;
+        this.idMateria = idMateria;
         this.nota = nota;
     }
 
     // Constructor con ID para cuando se recupera de la BD
-    public Calificacion(int idCalificacion, int idEstudiante, String materia, double nota) {
+    public Calificacion(int idCalificacion, int idEstudiante, int idMateria, float nota) {
         this.idCalificacion = idCalificacion;
         this.idEstudiante = idEstudiante;
-        this.materia = materia;
+        this.idMateria = idMateria;
         this.nota = nota;
     }
 
     // Métodos CRUD
     public boolean guardar() {
-        String sql = "INSERT INTO calificaciones (id_estudiante, materia, nota) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO calificaciones (id_estudiante, id_materia, nota) VALUES (?, ?, ?)";
         try (Connection conn = ConexionDB.obtenerConexion();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
             stmt.setInt(1, idEstudiante);
-            stmt.setString(2, materia);
-            stmt.setDouble(3, nota);
+            stmt.setInt(2, idMateria);
+            stmt.setFloat(3, nota);
             
             int filasAfectadas = stmt.executeUpdate();
             if (filasAfectadas > 0) {
@@ -60,8 +60,8 @@ public class Calificacion {
                 return new Calificacion(
                     rs.getInt("id_calificacion"),
                     rs.getInt("id_estudiante"),
-                    rs.getString("materia"),
-                    rs.getDouble("nota")
+                    rs.getInt("id_materia"),
+                    rs.getFloat("nota")
                 );
             }
         } catch (SQLException e) {
@@ -71,13 +71,13 @@ public class Calificacion {
     }
 
     public boolean actualizar() {
-        String sql = "UPDATE calificaciones SET id_estudiante = ?, materia = ?, nota = ? WHERE id_calificacion = ?";
+        String sql = "UPDATE calificaciones SET id_estudiante = ?, id_materia = ?, nota = ? WHERE id_calificacion = ?";
         try (Connection conn = ConexionDB.obtenerConexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, idEstudiante);
-            stmt.setString(2, materia);
-            stmt.setDouble(3, nota);
+            stmt.setInt(2, idMateria);
+            stmt.setFloat(3, nota);
             stmt.setInt(4, idCalificacion);
             
             return stmt.executeUpdate() > 0;
@@ -103,7 +103,7 @@ public class Calificacion {
     // Método para obtener todas las calificaciones de un estudiante
     public static List<Calificacion> obtenerCalificacionesPorEstudiante(int idEstudiante) {
         List<Calificacion> calificaciones = new ArrayList<>();
-        String sql = "SELECT * FROM calificaciones WHERE id_estudiante = ? ORDER BY materia";
+        String sql = "SELECT * FROM calificacion WHERE id_estudiante = ?";
         
         try (Connection conn = ConexionDB.obtenerConexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -115,8 +115,8 @@ public class Calificacion {
                 calificaciones.add(new Calificacion(
                     rs.getInt("id_calificacion"),
                     rs.getInt("id_estudiante"),
-                    rs.getString("materia"),
-                    rs.getDouble("nota")
+                    rs.getInt("id_materia"),
+                    rs.getFloat("nota")
                 ));
             }
         } catch (SQLException e) {
@@ -128,10 +128,15 @@ public class Calificacion {
     // Getters y Setters
     public int getIdCalificacion() { return idCalificacion; }
     public int getIdEstudiante() { return idEstudiante; }
-    public String getMateria() { return materia; }
-    public double getNota() { return nota; }
+    public int getIdMateria() { return idMateria; }
+    public float getNota() { return nota; }
 
     public void setIdEstudiante(int idEstudiante) { this.idEstudiante = idEstudiante; }
-    public void setMateria(String materia) { this.materia = materia; }
-    public void setNota(double nota) { this.nota = nota; }
+    public void setMateria(int idMateria) { this.idMateria = idMateria; }
+    public void setNota(float nota) { this.nota = nota; }
+
+    // Agregar este método a la clase Calificacion
+    public int getMateria() {
+        return idMateria; // Devuelve el idMateria
+    }
 }

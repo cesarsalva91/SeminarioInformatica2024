@@ -1,81 +1,21 @@
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
 public class DataWriter {
 
-    private static final String FILE_PATH = "data.json";
-
-    // Método general para guardar todos los datos en el archivo JSON
-    public static void saveData(List<Estudiante> estudiantes, List<Asistencia> asistencias,
-                                List<Calificacion> calificaciones, List<Notificacion> notificaciones) {
-        try (FileWriter writer = new FileWriter(FILE_PATH)) {
-            writer.write("{\n");
-            writer.write("\"estudiantes\": " + listToJson(estudiantes) + ",\n");
-            writer.write("\"asistencias\": " + listToJson(asistencias) + ",\n");
-            writer.write("\"calificaciones\": " + listToJson(calificaciones) + ",\n");
-            writer.write("\"notificaciones\": " + listToJson(notificaciones) + "\n");
-            writer.write("}");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Convertir una lista de objetos a formato JSON
-    private static String listToJson(List<?> list) {
-        StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < list.size(); i++) {
-            json.append(objectToJson(list.get(i)));
-            if (i < list.size() - 1) json.append(",");
-        }
-        json.append("]");
-        return json.toString();
-    }
-
-    // Convertir un objeto individual a formato JSON
-    private static String objectToJson(Object obj) {
-        if (obj instanceof Estudiante) {
-            Estudiante e = (Estudiante) obj;
-            return String.format(
-                "{\"idEstudiante\": %d, \"nombre\": \"%s\", \"apellido\": \"%s\", \"matricula\": \"%s\", \"contacto\": \"%s\"}",
-                e.getIdEstudiante(), e.getNombre(), e.getApellido(), e.getMatricula(), e.getContacto()
-            );
-        } else if (obj instanceof Asistencia) {
-            Asistencia a = (Asistencia) obj;
-            return String.format(
-                "{\"idAsistencia\": %d, \"fecha\": \"%s\", \"estado\": \"%s\", \"justificada\": %b, \"idEstudiante\": %d}",
-                a.getIdAsistencia(), a.getFecha(), a.getEstado(), a.getIdEstudiante()
-            );
-        } else if (obj instanceof Calificacion) {
-            Calificacion c = (Calificacion) obj;
-            return String.format(
-                "{\"idCalificacion\": %d, \"materia\": \"%s\", \"nota\": %.2f, \"idEstudiante\": %d}",
-                c.getIdCalificacion(), c.getMateria(), c.getNota(), c.getIdEstudiante()
-            );
-        } else if (obj instanceof Notificacion) {
-            Notificacion n = (Notificacion) obj;
-            return String.format(
-                "{\"idNotificacion\": %d, \"mensaje\": \"%s\", \"fechaEnvio\": \"%s\", \"idEstudiante\": %d}",
-                n.getIdNotificacion(), n.getMensaje(), n.getFechaEnvio(), n.getIdEstudiante()
-            );
-        }
-        return "{}";
-    }
-
     // Método para guardar datos en la base de datos
     public static void saveDataToDatabase(List<Estudiante> estudiantes, List<Asistencia> asistencias,
                                            List<Calificacion> calificaciones, List<Notificacion> notificaciones) {
-        String url = "jdbc:mysql://localhost:3306/tu_base_de_datos"; // Cambia esto a tu URL de base de datos
-        String user = "tu_usuario"; // Cambia esto a tu usuario de base de datos
-        String password = "tu_contraseña"; // Cambia esto a tu contraseña de base de datos
+        try (Connection conn = ConexionDB.obtenerConexion()) {
+            if (conn == null) {
+                System.err.println("No se pudo establecer la conexión a la base de datos.");
+                return;
+            }
 
-        try (Connection conn = DriverManager.getConnection(url, user, password)) {
             // Guardar estudiantes
-            String sqlEstudiante = "INSERT INTO estudiantes (idEstudiante, nombre, apellido, matricula, contacto) VALUES (?, ?, ?, ?, ?)";
+            String sqlEstudiante = "INSERT INTO estudiantes (id_estudiante, nombre, apellido, matricula, contacto) VALUES (?, ?, ?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(sqlEstudiante)) {
                 for (Estudiante e : estudiantes) {
                     pstmt.setInt(1, e.getIdEstudiante());
@@ -87,11 +27,43 @@ public class DataWriter {
                 }
             }
 
-            // Similar para asistencias, calificaciones y notificaciones...
-            // ... (código omitido para otras inserciones)
+            // Guardar asistencias
+            String sqlAsistencia = "INSERT INTO asistencia (id_estudiante, fecha, estado) VALUES (?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlAsistencia)) {
+                for (Asistencia a : asistencias) {
+                    pstmt.setInt(1, a.getIdEstudiante());
+                    pstmt.setDate(2, java.sql.Date.valueOf(a.getFecha()));
+                    pstmt.setString(3, a.getEstado());
+                    pstmt.executeUpdate();
+                }
+            }
+
+            // Guardar calificaciones
+            String sqlCalificacion = "INSERT INTO calificaciones (id_calificacion, materia, nota, id_estudiante) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlCalificacion)) {
+                for (Calificacion c : calificaciones) {
+                    pstmt.setInt(1, c.getIdCalificacion());
+                    pstmt.setInt(2, c.getMateria());
+                    pstmt.setDouble(3, c.getNota());
+                    pstmt.setInt(4, c.getIdEstudiante());
+                    pstmt.executeUpdate();
+                }
+            }
+
+            // Guardar notificaciones
+            String sqlNotificacion = "INSERT INTO notificaciones (id_notificacion, mensaje, fecha_envio, id_estudiante) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlNotificacion)) {
+                for (Notificacion n : notificaciones) {
+                    pstmt.setInt(1, n.getIdNotificacion());
+                    pstmt.setString(2, n.getMensaje());
+                    pstmt.setDate(3, java.sql.Date.valueOf(n.getFechaEnvio()));
+                    pstmt.setInt(4, n.getIdEstudiante());
+                    pstmt.executeUpdate();
+                }
+            }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Error al guardar datos en la base de datos: " + e.getMessage());
         }
     }
 }
