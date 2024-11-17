@@ -7,8 +7,8 @@ import java.util.Base64;
 
 public class MailgunEmailSender {
 
-    private static final String API_KEY = "85d3f4cdf7ff236de361cd51fb73937d-79295dd0-6aaa66f9"; // Asegúrate de usar tu clave API
-    private static final String DOMINIO = "sandbox8f2e6962dccd4a79925923c0079039e9.mailgun.org";
+    private static final String API_KEY = ""; // Asegúrate de usar tu clave API
+    private static final String DOMINIO = "";
 
     public static String sendSimpleMessage(String to, String subject, String text) throws Exception {
         String postData =  "from=Siglo 21(SEMINARIO DE PRACTICA) <cesar@" + DOMINIO + ">&" +
