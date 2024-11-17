@@ -3,34 +3,41 @@ import java.io.Serializable;
 // Definición de la clase Estudiante, que implementa Serializable para poder guardar objetos de esta clase en archivos.
 public class Estudiante implements Serializable {
 
-    // Atributos privados de la clase Estudiante.
-    // Estos atributos representan los datos que se almacenan para cada estudiante.
-    private int idEstudiante;  
-    private String nombre;      
-    private String apellido;    
-    private String matricula;   
-    private String contacto;    
+    // Atributos privados de la clase Estudiante, adaptados a la estructura de la base de datos.
+    private int id_estudiante;  // id_estudiante como INT
+    private String nombre;      // nombre como VARCHAR(100)
+    private String apellido;    // apellido como VARCHAR(100)
+    private int matricula;      // matricula como INT
+    private String contacto;     // contacto como VARCHAR(100)
 
     // Constructor vacío, permite crear un objeto Estudiante sin inicializar los atributos.
     public Estudiante() {}
 
     // Constructor con parámetros, permite crear un objeto Estudiante e inicializar sus atributos.
-    public Estudiante(int idEstudiante, String nombre, String apellido, String matricula, String contacto) {
-        this.idEstudiante = idEstudiante;
+    public Estudiante(int id_estudiante, String nombre, String apellido, int matricula, String contacto) {
+        this.id_estudiante = id_estudiante;  
         this.nombre = nombre;
         this.apellido = apellido;
-        this.matricula = matricula;
+        this.matricula = matricula;  
+        this.contacto = contacto;
+    }
+
+    // Agregar este constructor a la clase Estudiante
+    public Estudiante(int idEstudiante, String nombre, String apellido, String matricula, String contacto) {
+        this.id_estudiante = idEstudiante;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.matricula = Integer.parseInt(matricula);
         this.contacto = contacto;
     }
 
     // Métodos Getters y Setters para cada atributo.
-    // Estos métodos permiten acceder y modificar los valores de los atributos desde fuera de la clase, manteniendo la encapsulación.
     public int getIdEstudiante() {
-        return idEstudiante;
+        return id_estudiante;  
     }
 
-    public void setIdEstudiante(int idEstudiante) {
-        this.idEstudiante = idEstudiante;
+    public void setIdEstudiante(int id_estudiante) {
+        this.id_estudiante = id_estudiante;  
     }
 
     public String getNombre() {
@@ -49,12 +56,12 @@ public class Estudiante implements Serializable {
         this.apellido = apellido;
     }
 
-    public String getMatricula() {
-        return matricula;
+    public int getMatricula() {
+        return matricula;  
     }
 
-    public void setMatricula(String matricula) {
-        this.matricula = matricula;
+    public void setMatricula(int matricula) {  
+        this.matricula = matricula;  
     }
 
     public String getContacto() {
@@ -66,15 +73,13 @@ public class Estudiante implements Serializable {
     }
 
     // Método toString que sobrescribe el método por defecto de Object.
-    // Este método permite representar el objeto Estudiante como un String, mostrando todos sus atributos.
-    // Es útil para imprimir el objeto y verificar su contenido en un formato legible.
     @Override
     public String toString() {
         return "Estudiante{" +
-                "idEstudiante=" + idEstudiante +
+                "id_estudiante=" + id_estudiante +
                 ", nombre='" + nombre + '\'' +
                 ", apellido='" + apellido + '\'' +
-                ", matricula='" + matricula + '\'' +
+                ", matricula=" + matricula +  // Cambiado a int
                 ", contacto='" + contacto + '\'' +
                 '}';
     }

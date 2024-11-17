@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,7 +59,7 @@ public class DataReader {
             e.setIdEstudiante(Integer.parseInt(extractValue(item, "idEstudiante")));
             e.setNombre(extractValue(item, "nombre"));
             e.setApellido(extractValue(item, "apellido"));
-            e.setMatricula(extractValue(item, "matricula"));
+            e.setMatricula(Integer.parseInt(extractValue(item, "matricula")));
             e.setContacto(extractValue(item, "contacto"));
             list.add(e);
         }
@@ -72,7 +74,7 @@ public class DataReader {
             item = item.trim() + "}";
             Asistencia a = new Asistencia();
             a.setIdAsistencia(Integer.parseInt(extractValue(item, "idAsistencia")));
-            a.setFecha(extractValue(item, "fecha"));
+            a.setFecha(Date.valueOf(extractValue(item, "fecha")));
             a.setEstado(extractValue(item, "estado"));
             a.setJustificada(Boolean.parseBoolean(extractValue(item, "justificada")));
             a.setIdEstudiante(Integer.parseInt(extractValue(item, "idEstudiante")));
@@ -89,7 +91,6 @@ public class DataReader {
             item = item.trim() + "}";
             Calificacion c = new Calificacion();
             c.setIdCalificacion(Integer.parseInt(extractValue(item, "idCalificacion")));
-            c.setMateria(extractValue(item, "materia"));
             c.setNota(Float.parseFloat(extractValue(item, "nota")));
             c.setIdEstudiante(Integer.parseInt(extractValue(item, "idEstudiante")));
             list.add(c);
@@ -106,7 +107,7 @@ public class DataReader {
             Notificacion n = new Notificacion();
             n.setIdNotificacion(Integer.parseInt(extractValue(item, "idNotificacion")));
             n.setMensaje(extractValue(item, "mensaje"));
-            n.setFechaEnvio(extractValue(item, "fechaEnvio"));
+            n.setFechaEnvio(Timestamp.valueOf(extractValue(item, "fechaEnvio")));
             n.setIdEstudiante(Integer.parseInt(extractValue(item, "idEstudiante")));
             list.add(n);
         }

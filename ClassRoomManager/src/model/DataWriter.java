@@ -37,25 +37,25 @@ public class DataWriter {
         if (obj instanceof Estudiante) {
             Estudiante e = (Estudiante) obj;
             return String.format(
-                "{\"idEstudiante\": %d, \"nombre\": \"%s\", \"apellido\": \"%s\", \"matricula\": \"%s\", \"contacto\": \"%s\"}",
+                "{\"id_estudiante\": %d, \"nombre\": \"%s\", \"apellido\": \"%s\", \"matricula\": \"%s\", \"contacto\": \"%s\"}",
                 e.getIdEstudiante(), e.getNombre(), e.getApellido(), e.getMatricula(), e.getContacto()
             );
         } else if (obj instanceof Asistencia) {
             Asistencia a = (Asistencia) obj;
             return String.format(
-                "{\"idAsistencia\": %d, \"fecha\": \"%s\", \"estado\": \"%s\", \"justificada\": %b, \"idEstudiante\": %d}",
+                "{\"id_asistencia\": %d, \"fecha\": \"%s\", \"estado\": \"%s\", \"justificada\": %b, \"id_estudiante\": %d}",
                 a.getIdAsistencia(), a.getFecha(), a.getEstado(), a.isJustificada(), a.getIdEstudiante()
             );
         } else if (obj instanceof Calificacion) {
             Calificacion c = (Calificacion) obj;
             return String.format(
-                "{\"idCalificacion\": %d, \"materia\": \"%s\", \"nota\": %.2f, \"idEstudiante\": %d}",
+                "{\"id_calificacion\": %d, \"materia\": %d, \"nota\": %.2f, \"id_estudiante\": %d}",
                 c.getIdCalificacion(), c.getMateria(), c.getNota(), c.getIdEstudiante()
             );
         } else if (obj instanceof Notificacion) {
             Notificacion n = (Notificacion) obj;
             return String.format(
-                "{\"idNotificacion\": %d, \"mensaje\": \"%s\", \"fechaEnvio\": \"%s\", \"idEstudiante\": %d}",
+                "{\"id_notificacion\": %d, \"mensaje\": \"%s\", \"fechaEnvio\": \"%s\", \"id_estudiante\": %d}",
                 n.getIdNotificacion(), n.getMensaje(), n.getFechaEnvio(), n.getIdEstudiante()
             );
         }

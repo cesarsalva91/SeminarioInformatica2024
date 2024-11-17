@@ -1,33 +1,33 @@
 import java.io.Serializable;
-//import java.util.Date;
+import java.sql.Timestamp;
 
-
+// Definición de la clase Notificacion, que implementa Serializable para permitir su almacenamiento en un archivo.
 public class Notificacion implements Serializable {
 
-    // Atributos de la clase Notificacion.
-    private int idNotificacion;    
-    private String mensaje;        
-    private String fechaEnvio;        
-    private int idEstudiante;     
+    // Atributos privados de la clase Notificacion, adaptados a la estructura de la base de datos.
+    private int id_notificacion;  // id_notificacion como INT
+    private String mensaje;       // mensaje como TEXT
+    private Timestamp fecha_envio; // fecha_envio como TIMESTAMP
+    private int idEstudiante;     // idEstudiante como INT (relación con Estudiante)
 
     // Constructor vacío que permite crear un objeto Notificacion sin inicializar sus atributos.
     public Notificacion() {}
 
-    // Constructor con parámetros para inicializar todos los atributos de un objeto Notificacion.
-    public Notificacion(int idNotificacion, String mensaje, String fechaEnvio, int idEstudiante) {
-        this.idNotificacion = idNotificacion;
+    // Constructor con parámetros, permite crear un objeto Notificacion e inicializar sus atributos.
+    public Notificacion(int id_notificacion, String mensaje, Timestamp fecha_envio, int idEstudiante) {
+        this.id_notificacion = id_notificacion;  
         this.mensaje = mensaje;
-        this.fechaEnvio = fechaEnvio;
+        this.fecha_envio = fecha_envio;  
         this.idEstudiante = idEstudiante;
     }
 
-    // Getters y Setters para acceder y modificar cada atributo de la clase.
+    // Métodos Getters y Setters para cada atributo.
     public int getIdNotificacion() {
-        return idNotificacion;
+        return id_notificacion;  
     }
 
-    public void setIdNotificacion(int idNotificacion) {
-        this.idNotificacion = idNotificacion;
+    public void setIdNotificacion(int id_notificacion) {
+        this.id_notificacion = id_notificacion;  
     }
 
     public String getMensaje() {
@@ -38,30 +38,30 @@ public class Notificacion implements Serializable {
         this.mensaje = mensaje;
     }
 
-    public String getFechaEnvio() {
-        return fechaEnvio;
+    public Timestamp getFechaEnvio() {
+        return fecha_envio;
     }
 
-    public void setFechaEnvio(String string) {
-        this.fechaEnvio = string;
+    public void setFechaEnvio(Timestamp fecha_envio) {
+        this.fecha_envio = fecha_envio;
+    }
+
+    // Método para establecer el ID del estudiante
+    public void setIdEstudiante(int idEstudiante) {
+        this.idEstudiante = idEstudiante; // Asegúrate de que la variable idEstudiante esté definida en la clase
     }
 
     public int getIdEstudiante() {
         return idEstudiante;
     }
 
-    public void setIdEstudiante(int idEstudiante) {
-        this.idEstudiante = idEstudiante;
-    }
-
-    // Método toString para representar un objeto Notificacion como una cadena de texto.
+    // Método toString que sobrescribe el método por defecto de Object.
     @Override
     public String toString() {
         return "Notificacion{" +
-                "idNotificacion=" + idNotificacion +
+                "id_notificacion=" + id_notificacion +
                 ", mensaje='" + mensaje + '\'' +
-                ", fechaEnvio=" + fechaEnvio +
-                ", idEstudiante=" + idEstudiante +
+                ", fecha_envio=" + fecha_envio +
                 '}';
     }
 }

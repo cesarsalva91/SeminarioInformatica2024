@@ -1,67 +1,58 @@
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.List;
 import java.util.Scanner;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.stream.Collectors;
 
 public class Main {
-    private static final String DATA_DIR = "data";
-    private static final String FILE_PATH = DATA_DIR + "/estudiantes.json";
-
-    private static void initializeFileStructure() {
-        // Crear directorio data si no existe
-        File directory = new File(DATA_DIR);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
-        // Crear archivo estudiantes.json si no existe
-        File file = new File(FILE_PATH);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                // Escribir estructura JSON inicial
-                FileWriter writer = new FileWriter(file);
-                writer.write("{\"estudiantes\":[]}");
-                writer.close();
-                System.out.println("Archivo JSON inicializado correctamente.");
-            } catch (IOException e) {
-                System.err.println("Error al crear el archivo JSON inicial: " + e.getMessage());
-            }
-        }
-    }
-
     private static SchoolService schoolService = new SchoolService();
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        // Inicializar la estructura de archivos
-        initializeFileStructure();
-
         while (true) {
             System.out.println("\n=== SISTEMA DE GESTIÓN ESCOLAR ===");
             System.out.println("1. Agregar estudiante");
             System.out.println("2. Registrar asistencia");
             System.out.println("3. Asociar materia a estudiante");
             System.out.println("4. Consultar asistencias");
-            System.out.println("5. Salir");
+            System.out.println("5. Consultar calificaciones");
+            System.out.println("6. Agregar materia");
+            System.out.println("7. Salir");
             System.out.print("Seleccione una opción: ");
             
-            int opcion = scanner.nextInt();
-            scanner.nextLine(); // Limpiar buffer
+            String input = scanner.nextLine(); // Leer la entrada como String
+            int opcion;
+
+            try {
+                opcion = Integer.parseInt(input); // Convertir a entero
+            } catch (NumberFormatException e) {
+                System.out.println("Por favor, ingrese un número válido.");
+                continue; // Volver al inicio del bucle
+            }
             
             switch (opcion) {
-                case 1 -> agregarEstudiante();
-                case 2 -> registrarAsistencia();
-                case 3 -> asociarMateria();
-                case 4 -> consultarAsistencias();
-                case 5 -> {
+                case 1:
+                    agregarEstudiante();
+                    break;
+                case 2:
+                    registrarAsistencia();
+                    break;
+                case 3:
+                    asociarMateria();
+                    break;
+                case 4:
+                    consultarAsistencias();
+                    break;
+                case 5:
+                    consultarCalificaciones();
+                    break;
+                case 6:
+                    agregarMateria();
+                    break;
+                case 7:
                     System.out.println("¡Hasta luego!");
                     return;
-                }
-                default -> System.out.println("Opción no válida");
+                default:
+                    System.out.println("Opción no válida. Por favor, intente nuevamente.");
             }
         }
     }
@@ -115,7 +106,7 @@ public class Main {
 
         // Buscar estudiante por matrícula
         Estudiante estudiante = estudiantes.stream()
-                .filter(e -> e.getMatricula().equals(matricula))
+                .filter(e -> String.valueOf(e.getMatricula()).equals(matricula))
                 .findFirst()
                 .orElse(null);
 
@@ -132,20 +123,23 @@ public class Main {
         List<Asistencia> asistencias = schoolService.cargarAsistencias();
         int nuevoId = asistencias.isEmpty() ? 1 : asistencias.get(asistencias.size() - 1).getIdAsistencia() + 1;
 
-        String fecha = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
+        // Obtener la fecha actual
+        LocalDate fechaActual = LocalDate.now();
+        java.sql.Date fecha = java.sql.Date.valueOf(fechaActual); // Convertir a java.sql.Date
         
         System.out.println("\nEstado de asistencia:");
         System.out.println("1. Presente");
         System.out.println("2. Ausente");
         System.out.print("Seleccione: ");
         int estadoOpcion = scanner.nextInt();
+        scanner.nextLine(); // Limpiar el buffer después de leer un entero
         String estado = estadoOpcion == 1 ? "Presente" : "Ausente";
 
         // Solo preguntar por justificación si está ausente
         boolean justificada = false;
         if (estado.equals("Ausente")) {
             System.out.print("¿Está justificada? (s/n): ");
-            justificada = scanner.next().toLowerCase().startsWith("s");
+            justificada = scanner.nextLine().toLowerCase().startsWith("s");
         }
 
         Asistencia nuevaAsistencia = new Asistencia(nuevoId, fecha, estado, justificada, estudiante.getIdEstudiante());
@@ -153,21 +147,6 @@ public class Main {
         schoolService.guardarAsistencias(asistencias);
 
         System.out.println("Asistencia registrada exitosamente.");
-    }
-
-    private static void agregarMateria() {
-        System.out.println("\n=== AGREGAR MATERIA ===");
-        
-        System.out.print("Nombre de la materia: ");
-        String nombreMateria = scanner.nextLine();
-        
-        System.out.print("Descripción de la materia: ");
-        String descripcion = scanner.nextLine();
-        
-        // Aquí puedes agregar la lógica para guardar la materia en un archivo JSON
-        // Similar a como se hace con estudiantes y asistencias
-        
-        System.out.println("Materia agregada exitosamente.");
     }
 
     private static void asociarMateria() {
@@ -184,7 +163,7 @@ public class Main {
 
         // Buscar estudiante por matrícula
         Estudiante estudiante = estudiantes.stream()
-                .filter(e -> e.getMatricula().equals(matricula))
+                .filter(e -> String.valueOf(e.getMatricula()).equals(matricula)) // Convertir matrícula a String
                 .findFirst()
                 .orElse(null);
 
@@ -205,8 +184,8 @@ public class Main {
 
         // Verificar si el estudiante ya tiene esta materia asociada
         boolean materiaExistente = calificaciones.stream()
-                .anyMatch(c -> c.getIdEstudiante() == estudiante.getIdEstudiante() 
-                        && c.getMateria().equalsIgnoreCase(materia));
+           .anyMatch(c -> c.getIdEstudiante() == estudiante.getIdEstudiante() 
+                        && String.valueOf(c.getMateria()).equalsIgnoreCase(materia)); // Corregido
 
         if (materiaExistente) {
             System.out.println("El estudiante ya tiene esta materia asociada.");
@@ -246,9 +225,9 @@ public class Main {
 
         // Buscar estudiante por matrícula
         Estudiante estudiante = estudiantes.stream()
-                .filter(e -> e.getMatricula().equals(matricula))
-                .findFirst()
-                .orElse(null);
+           .filter(e -> String.valueOf(e.getMatricula()).equals(matricula)) // Convertir matrícula a String
+          .findFirst()
+        .orElse(null);
 
         if (estudiante == null) {
             System.out.println("No se encontró ningún estudiante con esa matrícula.");
@@ -264,7 +243,7 @@ public class Main {
         List<Asistencia> asistencias = schoolService.cargarAsistencias();
         List<Asistencia> asistenciasEstudiante = asistencias.stream()
                 .filter(a -> a.getIdEstudiante() == estudiante.getIdEstudiante())
-                .toList();
+                .collect(Collectors.toList());
 
         if (asistenciasEstudiante.isEmpty()) {
             System.out.println("\nEl estudiante no tiene asistencias registradas.");
@@ -295,5 +274,48 @@ public class Main {
         System.out.printf("Presentes: %d%n", presentes);
         System.out.printf("Ausentes: %d%n", ausentes);
         System.out.printf("Porcentaje de asistencia: %.2f%%%n", porcentajeAsistencia);
+    }
+
+    private static void consultarCalificaciones() {
+        System.out.println("\n=== CONSULTAR CALIFICACIONES ===");
+        
+        List<Estudiante> estudiantes = schoolService.cargarEstudiantes();
+        if (estudiantes.isEmpty()) {
+            System.out.println("No hay estudiantes registrados.");
+            return;
+        }
+
+        System.out.print("Ingrese la matrícula del estudiante: ");
+        String matricula = scanner.nextLine();
+
+        // Buscar estudiante por matrícula
+        Estudiante estudiante = estudiantes.stream()
+                .filter(e -> String.valueOf(e.getMatricula()).equals(matricula)) // Convertir matrícula a String
+                .findFirst()
+                .orElse(null);
+
+        if (estudiante == null) {
+            System.out.println("No se encontró ningún estudiante con esa matrícula.");
+            return;
+        }
+
+        // Mostrar calificaciones del estudiante
+        schoolService.mostrarCalificaciones(estudiante.getIdEstudiante());
+    }
+
+    private static void agregarMateria() {
+        System.out.println("\n=== AGREGAR MATERIA ===");
+        
+        System.out.print("Nombre de la materia: ");
+        String nombre = scanner.nextLine();
+        
+        System.out.print("Descripción de la materia: ");
+        String descripcion = scanner.nextLine();
+        
+        // Crear nueva materia
+        Materia nuevaMateria = new Materia(nombre, descripcion); // Eliminar 'codigo' si no es necesario
+        nuevaMateria.guardar(); // Guardar en la base de datos
+
+        System.out.println("Materia agregada exitosamente.");
     }
 }
