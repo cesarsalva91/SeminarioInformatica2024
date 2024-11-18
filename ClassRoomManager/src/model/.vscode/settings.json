@@ -1,8 +1,0 @@
-{
-    "java.project.sourcePaths": [
-        "."
-    ],
-    "java.project.referencedLibraries": [
-        "c:\\Users\\cesar\\Desktop\\mail_send\\SeminarioInformatica2024\\ClassRoomManager\\src\\model\\lib\\mysql-connector-j-9.1.0.jar"
-    ]
-}
