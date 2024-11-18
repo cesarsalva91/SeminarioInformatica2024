@@ -1,1 +1,0 @@
-# SeminarioInformatica2024
